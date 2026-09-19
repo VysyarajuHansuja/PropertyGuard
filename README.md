@@ -63,7 +63,7 @@ PrpertyGuard/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/PropertyGuard.git
+git clone https://github.com/VysyarajuHansuja/PropertyGuard.git
 cd PropertyGuard
 ```
 
@@ -101,6 +101,4 @@ Open your browser at `http://localhost:8501` to use the dashboard!
 
 ---
 
-## 🛡️ License
 
-This project is open-source under the MIT License.
