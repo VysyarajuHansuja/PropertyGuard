@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# CatBoost telemetry & training logs
+catboost_info/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
