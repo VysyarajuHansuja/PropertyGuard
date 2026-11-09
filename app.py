@@ -173,27 +173,31 @@ st.markdown("# 🏠 PropertyGuard")
 st.markdown("### Climate & Sustainability-Aware House Price Valuation Engine")
 st.markdown(f"**Target Property:** {bedrooms} BHK Flat, {area_sqft:,} sq.ft. in **{selected_locality}, {selected_city}**")
 
+# Calculate climate lookup
+climate_info = get_climate_data(selected_city, selected_locality)
+
 # Helper function to predict price
-def predict_property_price():
+def predict_property_price(c_info_dict):
     if not artifacts_loaded:
         return 5000000 # fallback
         
     loc_stats = encoders.get("loc_stats", {})
     city_stats = encoders.get("city_stats", {})
-    global_mean = encoders.get("global_mean", 15.5)
+    global_mean = encoders.get("global_mean", 8.5)
+    target_mode = encoders.get("target_mode", "log_pps")
     
-    l_info = loc_stats.get(selected_locality, None)
+    # Check compound key first (e.g. "Bengaluru::Indiranagar"), fallback to locality
+    comp_key = f"{selected_city}::{selected_locality}"
+    l_info = loc_stats.get(comp_key, loc_stats.get(selected_locality, None))
     c_info = city_stats.get(selected_city, None)
+    c_val = c_info['mean'] if c_info else global_mean
     smoothing = 10
-    
     if l_info:
-        loc_encoded = (l_info['count'] * l_info['mean'] + smoothing * global_mean) / (l_info['count'] + smoothing)
-    elif c_info:
-        loc_encoded = c_info['mean']
+        loc_encoded = (l_info['count'] * l_info['mean'] + smoothing * c_val) / (l_info['count'] + smoothing)
     else:
-        loc_encoded = global_mean
+        loc_encoded = c_val
         
-    city_encoded = c_info['mean'] if c_info else global_mean
+    city_encoded = c_val
     
     amenity_count = sum(amenities_dict.values())
     area_per_bhk = area_sqft / bedrooms
@@ -205,6 +209,14 @@ def predict_property_price():
     luxury_score = sum([amenities_dict.get(c, 0) for c in luxury_cols])
     essential_score = sum([amenities_dict.get(c, 0) for c in essential_cols])
     
+    # Climate engine indicators
+    flood_rank_map = {"Low": 1, "Moderate": 2, "High": 3, "Very High": 4, "Extreme": 5}
+    f_first = c_info_dict.get("metrics", {}).get("flood_risk", "Moderate").split()[0]
+    flood_rank = flood_rank_map.get(f_first, 2)
+    sustain_score = c_info_dict.get("sustainability_score", 65)
+    aqi_val = c_info_dict.get("metrics", {}).get("aqi", 100)
+    solar_val = c_info_dict.get("metrics", {}).get("solar_insolation", 5.2)
+    
     row_data = {
         "Area": area_sqft,
         "log_area": log_area,
@@ -214,8 +226,14 @@ def predict_property_price():
         "area_per_bhk": area_per_bhk,
         "luxury_score": luxury_score,
         "essential_score": essential_score,
+        "loc_pps_encoded": loc_encoded,
+        "city_pps_encoded": city_encoded,
         "loc_encoded": loc_encoded,
-        "city_encoded": city_encoded
+        "city_encoded": city_encoded,
+        "sustainability_score": sustain_score,
+        "avg_aqi": aqi_val,
+        "solar_insolation": solar_val,
+        "flood_risk_rank": flood_rank
     }
     row_data.update(amenities_dict)
     
@@ -226,17 +244,20 @@ def predict_property_price():
         cb = model_obj['cb']
         hgb = model_obj['hgb']
         xgb = model_obj['xgb']
-        w = model_obj.get('weights', [0.45, 0.35, 0.20])
-        log_pred = w[0] * cb.predict(input_df)[0] + w[1] * hgb.predict(input_df)[0] + w[2] * xgb.predict(input_df)[0]
+        w = model_obj.get('weights', [0.65, 0.25, 0.10])
+        pred_val = w[0] * cb.predict(input_df)[0] + w[1] * hgb.predict(input_df)[0] + w[2] * xgb.predict(input_df)[0]
     else:
-        log_pred = model_obj.predict(input_df)[0]
+        pred_val = model_obj.predict(input_df)[0]
         
-    predicted_price = np.expm1(log_pred)
+    if target_mode == 'log_pps':
+        predicted_price = area_sqft * np.exp(pred_val)
+    else:
+        predicted_price = np.expm1(pred_val)
+        
     return predicted_price
 
 # Calculate predictions & climate lookup
-pred_price = predict_property_price()
-climate_info = get_climate_data(selected_city, selected_locality)
+pred_price = predict_property_price(climate_info)
 
 # Create Dashboard Tabs
 tab_val, tab_climate, tab_advice, tab_chat = st.tabs([
