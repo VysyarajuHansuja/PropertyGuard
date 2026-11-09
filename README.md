@@ -63,7 +63,7 @@ PrpertyGuard/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/VysyarajuHansuja/PropertyGuard.git
+git clone https://github.com/<your-username>/PropertyGuard.git
 cd PropertyGuard
 ```
 
@@ -94,11 +94,13 @@ Open your browser at `http://localhost:8501` to use the dashboard!
 
 ## 📊 Evaluation & Machine Learning Metrics
 
-- **Target Variable**: $\log(\text{Price})$ to manage heavy positive skewness.
-- **Models Evaluated**: CatBoost Regressor, XGBoost, HistGradientBoosting, Random Forest.
-- **Evaluation Metrics**: $R^2$, MAE, RMSE, and MAPE across all 6 metropolitan cities.
-- **Feature Engineering**: Luxury & essential amenity counts, log-transformed area, bedroom-to-area density, and locality smoothed encodings.
+- **Target Variable**: $\log(\text{price\_per\_sqft})$ (`log_pps`) to decouple physical area scaling from neighborhood amenity premiums.
+- **Models Evaluated**: CatBoost Regressor (65%), HistGradientBoosting (25%), XGBoost (10%).
+- **Evaluation Metrics**: Achieved **$R^2 = 0.8023$**, **MAE = ₹18.30 Lakhs** (▼ 65.4% error reduction vs ₹52.85 Lakhs baseline), and **Median Accuracy = 83.85%**.
+- **Data Engineering**: Solved the raw amenity "9" bug via domain-grounded $9 \rightarrow 0$ mapping (documented in [MODEL_OPTIMIZATION_REPORT.md](MODEL_OPTIMIZATION_REPORT.md)), neighborhood-adaptive ratio bounds ($[0.55\times, 1.80\times]$), and 5-Fold OOF Bayesian target encoding.
 
 ---
 
+## 🛡️ License
 
+This project is open-source under the MIT License.
